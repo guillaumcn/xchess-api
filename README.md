@@ -5,7 +5,7 @@ Api for stockfish integration.
 ## Usage
 
 ```
-sudo docker run -dp 127.0.0.1:8080:8080 guillaumcn/xchess-api
+docker run -dp 127.0.0.1:8080:8080 guillaumcn/xchess-api
 ```
 
 Go to http://localhost:8080/swagger-ui/index.html for API documentation
