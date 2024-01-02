@@ -111,6 +111,7 @@
                 </configuration>
             </plugin>
         </plugins>
+        <finalName>xchess-api</finalName>
     </build>
 
 </project>
