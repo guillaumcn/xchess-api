@@ -21,6 +21,8 @@ Go to http://localhost:8080/swagger-ui/index.html for API documentation
 ## History
 
 * Version 1.0.0 (2024-01-03) - First release
+* Version 2.0.0 (2024-05-07) - Changed responses DTO
+* Version 2.1.0 (2024-05-30) - Added route for move action
 
 ## Credits
 
