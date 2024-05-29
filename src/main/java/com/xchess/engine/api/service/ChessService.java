@@ -1,15 +1,15 @@
 package com.xchess.engine.api.service;
 
 import com.xchess.ChessEngine;
-import com.xchess.engine.api.domain.response.BestMoveResponse;
-import com.xchess.engine.api.domain.response.EngineVersionResponse;
-import com.xchess.engine.api.domain.response.PositionEvaluationResponse;
-import com.xchess.engine.api.domain.response.PossibleMovesResponse;
+import com.xchess.engine.api.domain.response.*;
 import com.xchess.engine.api.exceptions.ChessEngineWorkerExecutionException;
+import com.xchess.engine.api.exceptions.InvalidMoveException;
 import com.xchess.engine.api.exceptions.InvalidSyntaxException;
 import com.xchess.engine.api.mapper.PositionEvaluationResponseMapper;
 import com.xchess.engine.api.pool.PoolWrapper;
 import com.xchess.evaluation.parameter.EvaluationParameters;
+import com.xchess.exceptions.IllegalMoveException;
+import com.xchess.exceptions.InvalidMoveSyntaxException;
 import com.xchess.exceptions.InvalidSquareSyntaxException;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -27,12 +27,12 @@ public class ChessService {
     public EngineVersionResponse getEngineVersion() throws Exception {
         return EngineVersionResponse
                 .builder()
-                .version(this.poolWrapper.queueAction(ChessEngine::getEngineVersion))
+                .version(poolWrapper.queueAction(ChessEngine::getEngineVersion))
                 .build();
     }
 
     public PossibleMovesResponse getPossibleMoves(String fen, String square) throws Exception {
-        return this.poolWrapper.queueAction(engineWorker -> {
+        return poolWrapper.queueAction(engineWorker -> {
             try {
                 moveToFenPositionIfDefined(engineWorker, fen);
                 List<String> possibleMoves;
@@ -56,7 +56,7 @@ public class ChessService {
 
     public BestMoveResponse findBestMove(String fen,
                                          EvaluationParameters evaluationParameters) throws Exception {
-        return this.poolWrapper.queueAction(engineWorker -> {
+        return poolWrapper.queueAction(engineWorker -> {
             try {
                 moveToFenPositionIfDefined(engineWorker, fen);
                 return BestMoveResponse
@@ -72,7 +72,7 @@ public class ChessService {
 
     public PositionEvaluationResponse getPositionEvaluation(String fen,
                                                             EvaluationParameters evaluationParameters) throws Exception {
-        return this.poolWrapper.queueAction(engineWorker -> {
+        return poolWrapper.queueAction(engineWorker -> {
             try {
                 moveToFenPositionIfDefined(engineWorker, fen);
                 return PositionEvaluationResponseMapper.toPositionEvaluationResponse(engineWorker.getPositionEvaluation(evaluationParameters));
@@ -80,6 +80,24 @@ public class ChessService {
                 throw new ChessEngineWorkerExecutionException(e);
             }
 
+        });
+    }
+
+    public MoveResponse move(String fen, List<String> moves) throws Exception {
+        return poolWrapper.queueAction(engineWorker -> {
+            try {
+                moveToFenPositionIfDefined(engineWorker, fen);
+                engineWorker.move(moves);
+                return MoveResponse.builder()
+                        .resultFen(engineWorker.getFenPosition())
+                        .build();
+            } catch (IOException | TimeoutException e) {
+                throw new ChessEngineWorkerExecutionException(e);
+            } catch (IllegalMoveException e) {
+                throw new InvalidMoveException(e);
+            } catch (InvalidMoveSyntaxException e) {
+                throw new InvalidSyntaxException(e);
+            }
         });
     }
 
