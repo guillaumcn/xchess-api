@@ -9,6 +9,7 @@ import com.xchess.engine.api.mapper.PositionEvaluationResponseMapper;
 import com.xchess.engine.api.pool.PoolWrapper;
 import com.xchess.evaluation.parameter.EvaluationParameters;
 import com.xchess.exceptions.IllegalMoveException;
+import com.xchess.exceptions.InvalidFenPositionException;
 import com.xchess.exceptions.InvalidMoveSyntaxException;
 import com.xchess.exceptions.InvalidSquareSyntaxException;
 import lombok.AllArgsConstructor;
@@ -93,7 +94,7 @@ public class ChessService {
                         .build();
             } catch (IOException | TimeoutException e) {
                 throw new ChessEngineWorkerExecutionException(e);
-            } catch (IllegalMoveException e) {
+            } catch (IllegalMoveException | InvalidFenPositionException e) {
                 throw new InvalidMoveException(e);
             } catch (InvalidMoveSyntaxException e) {
                 throw new InvalidSyntaxException(e);
@@ -103,10 +104,14 @@ public class ChessService {
 
     private static void moveToFenPositionIfDefined(ChessEngine engineWorker,
                                                    String fen) throws IOException, TimeoutException {
-        if (!Objects.isNull(fen)) {
-            engineWorker.moveToFenPosition(fen, true);
-        } else {
-            engineWorker.moveToStartPosition(true);
+        try {
+            if (!Objects.isNull(fen)) {
+                engineWorker.moveToFenPosition(fen, true);
+            } else {
+                engineWorker.moveToStartPosition(true);
+            }
+        } catch (InvalidFenPositionException e) {
+            throw new InvalidMoveException(e);
         }
     }
 }
